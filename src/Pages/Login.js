@@ -101,7 +101,7 @@ export default function Login({ setToken }) {
           )}
           {dropData === "Data Entry Operation" && (
             <div class="input-group">
-              <label for="email">Name of the Operation</label>
+              <label for="email">Name of the D.O</label>
               <Dropdown  setdropData={setOperationname} operation="Operation"/>
             </div>
           )}
@@ -135,7 +135,7 @@ export default function Login({ setToken }) {
             <span style={{ color: "red" }}>Please select Magistrate</span>
           )}
           {err3 && (
-            <span style={{ color: "red" }}>Please select Operation</span>
+            <span style={{ color: "red" }}>Please select the D.O</span>
           )}
           {loader ? (
             <div class="spinner-border" role="status">

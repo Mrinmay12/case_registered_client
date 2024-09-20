@@ -8,9 +8,12 @@ import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Dropdown from "../Components/Dropdown/Dropdown";
 import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 
 import {
   calculateCaseAverages,
+  DateFormate,
+  getDateDifference2,
   Number_Disposed_Case,
   Number_Registered_Case,
 } from "../Utiles";
@@ -24,6 +27,8 @@ export default function Home() {
   const [case_no1, setcase_no1] = useState("");
   const [case_tittle, setcase_tittle] = useState("");
   const [case_type, setcase_type] = useState("");
+  const [otherDetails, setOtherDetails] = useState("");
+  const [otherDetails1, setOtherDetails1] = useState("");
   const [case_type1, setcase_type1] = useState("");
   const [sortField, setSortField] = useState("_id"); // Default sort field
   const [sortOrder, setSortOrder] = useState("desc");
@@ -70,7 +75,7 @@ export default function Home() {
       setProducts(data.products);
       setCurrentPage(data.currentPage);
       setTotalPages(data.totalPages);
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const handlePageChange = (page) => {
@@ -81,18 +86,23 @@ export default function Home() {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchProducts(1, case_date, case_no, case_type1);
+    fetchProducts(
+      1,
+      case_date,
+      case_no,
+      case_type1 === "other" ? otherDetails1 : case_type1
+    );
   };
   const [case_err, setcase_err] = useState(false);
-  let Operationname=localStorage.getItem("Operationname");
+  let Operationname = localStorage.getItem("Operationname");
   const handleSubmit = async () => {
     let json = JSON.stringify({
       case_no: case_no1,
       case_tittle: case_tittle,
       case_date: case_date1,
       username: username,
-      case_type: case_type,
-      Operation_name:Operationname,
+      case_type: case_type === "other" ? otherDetails : case_type,
+      Operation_name: Operationname,
     });
     try {
       const response = await apiUrl.post(`/api/uploadpost`, json);
@@ -113,10 +123,13 @@ export default function Home() {
     setcase_no1("");
     setcase_tittle("");
     setcase_date1("");
+    setOtherDetails("");
+    setcase_type("");
     setusername("");
   };
   const handleReset1 = () => {
     setcase_no("");
+    setOtherDetails1("");
     setcase_date("");
     fetchProducts(1, "", "", "");
     setcase_type1("");
@@ -128,6 +141,7 @@ export default function Home() {
   const [showModal4, setShowModal4] = useState(false);
   const [showModal5, setShowModal5] = useState(false);
   const [showModal7, setShowModal7] = useState(false);
+  const [showModal8, setShowModal8] = useState(false);
   const [showModal6, setShowModal6] = useState(false);
   const toggleModal1 = (id) => {
     setupdate_case_id(id);
@@ -183,7 +197,7 @@ export default function Home() {
       case_date: update_case_date1,
       case_orders: update_case_orders,
       user_name: username1,
-      Operation_name:Operationname,
+      Operation_name: Operationname,
     });
     try {
       const response = await apiUrl.put(`/api/updatepost`, json);
@@ -198,7 +212,7 @@ export default function Home() {
         setShowModal(false);
         setShowModal3(false);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
   const handleUpdate_Case_Status1 = () => {
     setShowModal1(true);
@@ -213,6 +227,7 @@ export default function Home() {
       case_date: update_case_date1,
       case_orders: update_case_orders,
       user_name: username1,
+      operation_name: Operationname,
     });
     try {
       const response = await apiUrl.put(`/api/update_case_status`, json);
@@ -227,7 +242,7 @@ export default function Home() {
         setShowModal(false);
         setShowModal1(false);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
   console.log(file, "mmfmff");
 
@@ -263,7 +278,7 @@ export default function Home() {
         setFile(null);
         setFileName("No file chosen");
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const [orders_list, setOrders_list] = useState([]);
@@ -285,7 +300,7 @@ export default function Home() {
           })
         );
       }
-    } catch (err) {}
+    } catch (err) { }
   };
   const getCaseHistory = async () => {
     try {
@@ -295,7 +310,7 @@ export default function Home() {
       if (response) {
         setOrders_list(response.data.data);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -315,6 +330,7 @@ export default function Home() {
   const handleClose1 = () => setShowModal1(false);
   const handleClose5 = () => setShowModal5(false);
   const handleClose7 = () => setShowModal7(false);
+  const handleClose8 = () => setShowModal8(false);
   const handleClose6 = () => {
     setShowModal6(false);
     setEditorderId("");
@@ -331,7 +347,7 @@ export default function Home() {
         fetchProducts(1);
         setShowModal1(false);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
   const [token, setToken] = useState(localStorage.getItem("token"));
   const handlLogout = () => {
@@ -406,7 +422,7 @@ export default function Home() {
         setShowModal3(false);
         setShowModal6(false);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -419,6 +435,11 @@ export default function Home() {
   const [reporterr, setreporterr] = useState(false);
   console.log(reports_data, "reports_datareports_data");
 
+  const handleOpen = async () => {
+    setShowModal8(true);
+  }
+
+
   const Get_reports = async () => {
     try {
       const response = await apiUrl.get(
@@ -428,7 +449,7 @@ export default function Home() {
         setreports_data2(response.data.data);
         setreports_data(calculateCaseAverages(response.data.data));
       }
-    } catch (err) {}
+    } catch (err) { }
   };
   const handleGenerated = async () => {
     if (!start_date && !end_date) {
@@ -439,62 +460,144 @@ export default function Home() {
     }
   };
 
-   const handleDownload = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const handleDownload = () => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
     doc.setFontSize(12);
-  
+
     // Add header
     doc.text("REPORT GENERATED BASED ON SELECTED DATE RANGE", 10, 10);
-    doc.text(`Date: ${new Date(start_date).toLocaleDateString()} - ${new Date(end_date).toLocaleDateString()}`, 10, 20);
+    doc.text(
+      `Date: ${new Date(start_date).toLocaleDateString()} - ${new Date(
+        end_date
+      ).toLocaleDateString()}`,
+      10,
+      20
+    );
     let yOffset = 40; // Increased space for the header
-  
+
     // First Table Header
-    const headers1 = ["Case Type", "Number of Cases Registered", "Number of Cases Disposed"];
+    const headers1 = [
+      "Case Type",
+      "Number of Cases Registered",
+      "Number of Cases Disposed",
+    ];
     const colWidths1 = [60, 70, 60];
-  
+
     // Draw the first table
-    yOffset = drawTable(doc, headers1, reports_data, Number_Registered_Case, Number_Disposed_Case, yOffset, colWidths1);
-  
+    yOffset = drawTable(
+      doc,
+      headers1,
+      reports_data,
+      Number_Registered_Case,
+      Number_Disposed_Case,
+      yOffset,
+      colWidths1
+    );
+
     // Add space between tables
     yOffset += 10;
-  
+
     // Check for page overflow before drawing the second table
-    if (yOffset + 50 > doc.internal.pageSize.height) { // 50 is an estimate for the second table height
+    if (yOffset + 50 > doc.internal.pageSize.height) {
+      // 50 is an estimate for the second table height
       doc.addPage(); // Add a new page if there isn't enough space
       yOffset = 20; // Reset yOffset for the new page
     }
-  
+
     // Second Table Header
     const headers2 = ["Case Type", "Average Disposal (Days)"];
     const colWidths2 = [50, 50];
-  
+
     // Draw the second table
-    yOffset = drawTable(doc, headers2, reports_data, null, null, yOffset, colWidths2, true);
-  
+    yOffset = drawTable(
+      doc,
+      headers2,
+      reports_data,
+      null,
+      null,
+      yOffset,
+      colWidths2,
+      true
+    );
+
     // Add page number
     doc.setFontSize(10);
-    doc.text(`Page 1 of 1`, 200, doc.internal.pageSize.height - 10, { align: "right" });
-  
+    doc.text(`Page 1 of 1`, 200, doc.internal.pageSize.height - 10, {
+      align: "right",
+    });
+
     // Use case number for the filename
     const fileName = `${reports_data[0]?.caseNumber || "document"}.pdf`;
     doc.save(fileName);
   };
-  
-  const drawTable = (doc, headers, data, numRegisteredFunc, numDisposedFunc, yOffset, colWidths, isSecondTable = false) => {
+
+  const handleDownload1 = () => {
+    const exportData = reports_data.map((item) => ({
+      CaseType: item.caseNumber,
+      NumberOfCaseRegistered: Number_Registered_Case(
+        item.caseNumber,
+        reports_data2
+      ),
+      NumberOfCaseDisposed: Number_Disposed_Case(
+        item.caseNumber,
+        reports_data2
+      ),
+      AverageDisposalDays: item.average,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+    XLSX.writeFile(wb, "case_report.xlsx");
+  };
+
+  const handleDownload2 = () => {
+    const exportData = reports_data2.map((item) => ({
+      CaseType: item.case,
+      CaseTitle: item.case_tittle,
+      CaseNumber: item.case_no,
+      StartDate: item.start,
+      EndDate: item.end,
+      Different:getDateDifference2(item.start,item.end)
+    }));
+
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+    XLSX.writeFile(wb, "case_verify_report.xlsx");
+  };
+
+  const drawTable = (
+    doc,
+    headers,
+    data,
+    numRegisteredFunc,
+    numDisposedFunc,
+    yOffset,
+    colWidths,
+    isSecondTable = false
+  ) => {
     const totalWidth = colWidths.reduce((a, b) => a + b, 0);
     let xOffset = 10;
-  
+
     // Draw header
     headers.forEach((header, index) => {
       const cellX = xOffset + colWidths[index] / 2; // Center the text
       doc.text(header, cellX, yOffset, { align: "center" });
       xOffset += colWidths[index];
     });
-  
+
     // Draw header bottom border
     yOffset += 5;
     xOffset = 10;
-  
+
     // Draw vertical lines
     headers.forEach((_, index) => {
       const width = colWidths[index];
@@ -503,20 +606,24 @@ export default function Home() {
     });
     doc.line(10, yOffset, 10 + totalWidth, yOffset); // Bottom border of header
     yOffset += 5;
-  
+
     // Draw each row
     data.forEach((item) => {
-      const rowData = isSecondTable 
-        ? [item.caseNumber, item.average] 
-        : [item.caseNumber, numRegisteredFunc(item.caseNumber, reports_data2), numDisposedFunc(item.caseNumber, reports_data2)];
-  
+      const rowData = isSecondTable
+        ? [item.caseNumber, item.average]
+        : [
+          item.caseNumber,
+          numRegisteredFunc(item.caseNumber, reports_data2),
+          numDisposedFunc(item.caseNumber, reports_data2),
+        ];
+
       xOffset = 10;
       rowData.forEach((cell, index) => {
         const cellX = xOffset + colWidths[index] / 2; // Center the text
         doc.text(cell.toString(), cellX, yOffset, { align: "center" });
         xOffset += colWidths[index];
       });
-  
+
       // Draw row border and vertical lines
       yOffset += 5;
       xOffset = 10; // Reset for vertical lines
@@ -527,16 +634,21 @@ export default function Home() {
       doc.line(10, yOffset, 10 + totalWidth, yOffset); // Bottom border of the row
       yOffset += 5; // Space between rows
     });
-  
+
     // Draw the outer border of the table
     doc.line(10, yOffset - (data.length + 1) * 10, 10, yOffset); // Left border
-    doc.line(10 + totalWidth, yOffset - (data.length + 1) * 10, 10 + totalWidth, yOffset); // Right border
+    doc.line(
+      10 + totalWidth,
+      yOffset - (data.length + 1) * 10,
+      10 + totalWidth,
+      yOffset
+    ); // Right border
     // doc.line(10, yOffset - (data.length + 1) * 10, 10 + totalWidth, yOffset - (data.length + 1) * 10); // Top border
     doc.line(10, yOffset, 10 + totalWidth, yOffset); // Bottom border
-  
+
     return yOffset + 10; // Return new yOffset for the next section
   };
-  
+
   const handlePdf = async (id) => {
     try {
       window.open(
@@ -568,9 +680,9 @@ export default function Home() {
                 value={case_no1}
                 onChange={(e) => setcase_no1(e.target.value)}
               />
-              <label for="name">Case Tittle:</label>
+              <label for="name">Case Details:</label>
               <input
-                type="text"
+                type="textarea"
                 id="name"
                 name="name"
                 placeholder="Enter case tittle"
@@ -583,16 +695,34 @@ export default function Home() {
                 onChange={(e) => setcase_type(e.target.value)}
               >
                 <option value="">Select Case Type</option>
+                <option value="126">126</option>
+                <option value="129">129</option>
                 <option value="152">152</option>
                 <option value="163">163</option>
                 <option value="165">165</option>
                 <option value="166">166</option>
-                <option value="126">126</option>
-                <option value="129">129</option>
+                <option value="other">Other</option>
               </select>
-              <label for="sdem" style={{marginTop:"20px"}}>Name of the SDEM:</label>
+
+              {case_type === "other" && (
+                <div>
+                  <label htmlFor="otherDetails" style={{ width: "100%" }}>
+                    Please specify:
+                  </label>
+                  <input
+                    type="text"
+                    id="otherDetails"
+                    placeholder="Enter details here"
+                    value={otherDetails}
+                    onChange={(e) => setOtherDetails(e.target.value)}
+                  />
+                </div>
+              )}
+              <label for="sdem" style={{ marginTop: "20px" }}>
+                Name of the SDEM:
+              </label>
               <Dropdown setdropData={setusername} sdem_name={username} />
-              <label for="date">Date:</label>
+              <label for="date">Next Hearing Date:</label>
               <input
                 type="date"
                 id="date"
@@ -622,44 +752,71 @@ export default function Home() {
             <h2>Search Cases</h2>
             <div className="search-bar">
               <div className="two_item">
-                <label for="name-right" style={{ width: "40%" }}>
-                  Case Type:
-                </label>
-                <select
-                  value={case_type1}
-                  onChange={(e) => setcase_type1(e.target.value)}
-                >
-                  <option value="">Select Case Type</option>
-                  <option value="152">152</option>
-                  <option value="163">163</option>
-                  <option value="165">165</option>
-                  <option value="166">166</option>
-                  <option value="126">126</option>
-                  <option value="129">129</option>
-                </select>
+                <div className="case-type">
+                  <div className="casetype1">
+                    <label htmlFor="case-type" className="label">
+                      Case Type:
+                    </label>
+                    <select
+                      id="case-type"
+                      value={case_type1}
+                      onChange={(e) => setcase_type1(e.target.value)}
+                      className="select"
+                    >
+                      <option value="">Select Case Type</option>
+                      <option value="126">126</option>
+                      <option value="129">129</option>
+                      <option value="152">152</option>
+                      <option value="163">163</option>
+                      <option value="165">165</option>
+                      <option value="166">166</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
 
-                <label for="name-right" style={{ width: "40%" }}>
-                  Case No:
-                </label>
-                <input
-                  type="text"
-                  id="name-right"
-                  name="name-right"
-                  placeholder="Enter case number"
-                  value={case_no}
-                  onChange={(e) => setcase_no(e.target.value)}
-                />
+                  {case_type1 === "other" && (
+                    <div className="other-input">
+                      <label htmlFor="otherDetails" className="label">
+                        Please specify:
+                      </label>
+                      <input
+                        type="text"
+                        id="otherDetails"
+                        placeholder="Enter details here"
+                        value={otherDetails1}
+                        onChange={(e) => setOtherDetails1(e.target.value)}
+                        className="input"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                <label for="date-right" style={{ width: "40%" }}>
-                  Date:
-                </label>
-                <input
-                  type="date"
-                  id="date-right"
-                  name="date-right"
-                  value={case_date}
-                  onChange={(e) => setcase_date(e.target.value)}
-                />
+                <div className="case-type">
+                  <label for="name-right" style={{ width: "100%" }}>
+                    Case No:
+                  </label>
+                  <input
+                    type="text"
+                    id="name-right"
+                    name="name-right"
+                    placeholder="Enter case number"
+                    value={case_no}
+                    onChange={(e) => setcase_no(e.target.value)}
+                  />
+                </div>
+
+                <div className="case-type">
+                  <label for="date-right" style={{ width: "100%" }}>
+                    Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="date-right"
+                    name="date-right"
+                    value={case_date}
+                    onChange={(e) => setcase_date(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
             <div class="search-buttons">
@@ -670,32 +827,40 @@ export default function Home() {
                 Reset
               </button>
             </div>
+            <div style={{ borderTop: "1px dashed black", marginTop: "20px" }}>
+              <h6 style={{ marginTop: "10px" }}>Generate Reports</h6>
+              <button onClick={handleOpen} style={{ fontSize: "10px" }}>Click Here</button>
+            </div>
           </div>
 
-          <div class="search-my_card" style={{ marginTop: "34px !important" }}>
+          {/* <div class="search-my_card" style={{ marginTop: "34px !important" }}>
             <div className="search-bar">
               <div className="two_item">
-                <label for="name-right" style={{ width: "100%" }}>
-                  From Date:
-                </label>
-                <input
-                  type="date"
-                  id="date-right"
-                  name="date-right"
-                  value={start_date}
-                  onChange={(e) => setstart_date(e.target.value)}
-                />
-
-                <label for="date-right" style={{ width: "100%" }}>
-                  To Date:
-                </label>
-                <input
-                  type="date"
-                  id="date-right"
-                  name="date-right"
-                  value={end_date}
-                  onChange={(e) => setend_date(e.target.value)}
-                />
+                <div className="case-type">
+                  <label for="name-right" style={{ width: "100%" }}>
+                    From Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="date-right"
+                    name="date-right"
+                    value={start_date}
+                    onChange={(e) => setstart_date(e.target.value)}
+                  />
+                </div>
+                <h1 className="report-form">-</h1>
+                <div className="case-type">
+                  <label for="date-right" style={{ width: "100%" }}>
+                    To Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="date-right"
+                    name="date-right"
+                    value={end_date}
+                    onChange={(e) => setend_date(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
             {reporterr && (
@@ -715,137 +880,158 @@ export default function Home() {
                 Generated Report
               </button>
             </div>
-          </div>
+          </div> */}
 
           <div className="tableee">
             <div class="tabless">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    SI No
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case Number
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case Type
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case Tittle
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Hearing Date
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Name of the SDEM
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case Status
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case Order
-                  </th>
-                  <th style={{ background: "#ddd", fontSize: "12px" }}>
-                    Case History
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((item, index) => (
+              <table className="table">
+                <thead>
                   <tr>
-                    <td className="tbcol">{index + 1}</td>
-                    <td className="tbcol">{item.case_no}</td>
-                    <td className="tbcol">{item.case_type}</td>
-                    <td className="tbcol">{item.case_tittle}</td>
-                    <td className="tbcol">{new Date(item.case_date).toLocaleDateString()}</td>
-                    <td className="tbcol">{item.sdem_name}</td>
-                    <td className="tbcol">
-                      {item.case_status && (
-                        <p className="complete_order">complete</p>
-                      )}
-                    </td>
-                    <td>
-                      {!user_name ? (
-                        <div style={{ display: "flex" }}>
-                          <span
-                            onClick={() =>
-                              !item.case_status
-                                ? toggleModal(
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Sl No
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case Number
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case Type
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case Tittle
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Hearing Date
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Name of the SDEM
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case Status
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case Order
+                    </th>
+                    <th style={{ background: "#ddd", fontSize: "12px" }}>
+                      Case History
+                    </th>
+                    {user_name && (
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        D.E.O Updated details
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((item, index) => (
+                    <tr>
+                      <td className="tbcol">{index + 1}</td>
+                      <td className="tbcol">{item.case_no}</td>
+                      <td className="tbcol">{item.case_type}</td>
+                      <td className="tbcol">{item.case_tittle}</td>
+                      <td className="tbcol">
+                        {DateFormate(item.case_date)}
+                      </td>
+                      <td className="tbcol">{item.sdem_name}</td>
+                      <td className="tbcol">
+                        {item.case_status && (
+                          <p className="complete_order">complete</p>
+                        )}
+                      </td>
+                      <td>
+                        {!user_name ? (
+                          <div style={{ display: "flex" }}>
+                            <span
+                              onClick={() =>
+                                !item.case_status
+                                  ? toggleModal(
                                     item.case_no,
                                     item.case_tittle,
                                     item.case_date,
                                     item._id,
                                     item.sdem_name
                                   )
-                                : ""
-                            }
-                          >
-                            {" "}
-                            <img src={editIcon} alt="" width="27px" />
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex" }}>
-                          {/* {item.case_orders ? (
+                                  : ""
+                              }
+                            >
+                              {" "}
+                              <img src={editIcon} alt="" width="27px" />
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex" }}>
+                            {/* {item.case_orders ? (
                           <span onClick={() => toggleModal4(item.case_orders)}>
                             {" "}
                             <img src={ViewIcon} alt="" width="27px" />
                           </span>
                         ) : ( */}
-                          <span
-                            onClick={() =>
-                              !item.case_status
-                                ? toggleModal3(
+                            <span
+                              onClick={() =>
+                                !item.case_status
+                                  ? toggleModal3(
                                     item.case_no,
                                     item.case_tittle,
                                     item.case_date,
                                     item._id
                                   )
-                                : ""
-                            }
-                          >
-                            {" "}
-                            <img src={editIcon} alt="" width="27px" />
-                          </span>
-                          {/* )} */}
-                        </div>
+                                  : ""
+                              }
+                            >
+                              {" "}
+                              <img src={editIcon} alt="" width="27px" />
+                            </span>
+                            {/* )} */}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {!user_name ? (
+                          <div style={{ display: "flex" }}>
+                            <span onClick={() => toggleModal5(item._id)}>
+                              <img
+                                src={editIcon}
+                                title="view"
+                                alt=""
+                                width="27px"
+                              />
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex" }}>
+                            <span
+                              onClick={() =>
+                                toggleModal6(
+                                  item.case_no,
+                                  item.case_tittle,
+                                  item.case_date,
+                                  item._id,
+                                  item._name
+                                )
+                              }
+                            >
+                              <img src={editIcon} alt="" width="27px" />
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      {user_name && (
+                        <td>
+                          <div style={{ display: "flex" }}>
+                            <span onClick={() => toggleModal5(item._id)}>
+                              <img
+                                src={editIcon}
+                                title="view"
+                                alt=""
+                                width="27px"
+                              />
+                            </span>
+                          </div>
+                        </td>
                       )}
-                    </td>
-                    <td>
-                      {!user_name ? (
-                        <div style={{ display: "flex" }}>
-                          <span onClick={() => toggleModal5(item._id)}>
-                            <img
-                              src={editIcon}
-                              title="view"
-                              alt=""
-                              width="27px"
-                            />
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex" }}>
-                          <span
-                            onClick={() =>
-                              toggleModal6(
-                                item.case_no,
-                                item.case_tittle,
-                                item.case_date,
-                                item._id,
-                                item._name
-                              )
-                            }
-                          >
-                            <img src={editIcon} alt="" width="27px" />
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
           {products.length > 0 && (
@@ -913,7 +1099,7 @@ export default function Home() {
               name="date"
               value={update_case_date1}
               onChange={(e) => setupdate_case_date1(e.target.value)}
-              // disabled
+            // disabled
             />
 
             <div class="search-buttons">
@@ -926,11 +1112,11 @@ export default function Home() {
             </div>
             <div className="combtn">
               <button
-               type="reset"
-               onClick={() => handleUpdate_Case_Status1()}
-               style={{ marginTop: "18px"}}
-             >
-              Complete Order
+                type="reset"
+                onClick={() => handleUpdate_Case_Status1()}
+                style={{ marginTop: "18px" }}
+              >
+                Complete Order
               </button>
             </div>
           </div>
@@ -950,7 +1136,7 @@ export default function Home() {
               name="date"
               value={update_case_date1}
               onChange={(e) => setupdate_case_date1(e.target.value)}
-              // disabled
+            // disabled
             />
             <label for="date">Orders:</label>
             <textarea
@@ -964,7 +1150,7 @@ export default function Home() {
               style={{ marginBottom: "4px" }}
             />
             <hr />
-            <div className="upload-container">
+            {/* <div className="upload-container">
               <form>
                 <label htmlFor="file-upload" className="custom-file-upload">
                   <i className="fas fa-cloud-upload-alt"></i> Upload File
@@ -976,7 +1162,7 @@ export default function Home() {
                 />
                 <p id="file-name">{fileName}</p>
               </form>
-            </div>
+            </div> */}
             <div class="search-buttons">
               <button type="button" onClick={createOrder}>
                 Submit Order
@@ -988,9 +1174,9 @@ export default function Home() {
                 onClick={() => handleUpdate_Case_Status1()}
                 style={{ marginTop: "18px" }}
               >
-              Complete Order
+                Complete Order
               </button>
-            </div> 
+            </div>
           </div>
         </Modal.Body>
       </Modal>
@@ -1044,8 +1230,12 @@ export default function Home() {
                   onClick={() => handleClick(item._id)}
                 >
                   <p>Date:</p>
-                  <span style={{ marginLeft: "10px", marginBottom: "6px" }}>
-                    {new Date(item.case_date).toLocaleDateString()} ({item.Operation_name})
+                  <span style={{ marginLeft: "10px", marginBottom: "6px", display: "flex" }}>
+                    {DateFormate(item.case_date)} (
+                    {item.Operation_name})
+                    {item.case_status && (
+                      <p className="complete_order" style={{ margin: "-2px", marginLeft: "16px", padding: "3px" }}>complete</p>
+                    )}
                   </span>
                 </div>
 
@@ -1104,7 +1294,7 @@ export default function Home() {
                           fontSize: "large",
                         }}
                       >
-                        {new Date(item.case_date).toLocaleDateString()}
+                        {DateFormate(item.case_date)}
                       </span>
                     </div>
                   </div>
@@ -1174,7 +1364,7 @@ export default function Home() {
                 >
                   <p>Date:</p>
                   <span style={{ marginBottom: "3px" }}>
-                    {new Date(item.case_date).toLocaleDateString()}
+                    {DateFormate(item.case_date)}
                   </span>
                 </div>
                 <hr />
@@ -1190,7 +1380,7 @@ export default function Home() {
                 name="date"
                 value={update_case_date1}
                 onChange={(e) => setupdate_case_date1(e.target.value)}
-                // disabled
+              // disabled
               />
               <label for="date">Orders:</label>
               <textarea
@@ -1213,13 +1403,71 @@ export default function Home() {
         </Modal.Body>
       </Modal>
 
-      <Modal show={showModal7} onHide={handleClose7} centered>
+      <Modal className="modal8" show={showModal8} onHide={handleClose8} centered>
+        <Modal.Header closeButton>
+          <Modal.Title style={{ display: "flex" }}>
+            <h5 style={{ alignSelf: "center", display: "flex", justifyContent: "center", textTransform: "uppercase" }}>Generate Your report</h5>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div class="search-my_card" style={{ marginTop: "34px !important" }}>
+            <div className="search-bar">
+              <div className="two_item">
+                <div className="case-type">
+                  <label for="name-right" style={{ width: "100%" }}>
+                    From Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="date-right"
+                    name="date-right"
+                    value={start_date}
+                    onChange={(e) => setstart_date(e.target.value)}
+                  />
+                </div>
+                <h1 className="report-form">-</h1>
+                <div className="case-type">
+                  <label for="date-right" style={{ width: "100%" }}>
+                    To Date:
+                  </label>
+                  <input
+                    type="date"
+                    id="date-right"
+                    name="date-right"
+                    value={end_date}
+                    onChange={(e) => setend_date(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            {reporterr && (
+              <>
+                {!start_date && !end_date ? (
+                  <span style={{ color: "red" }}>
+                    Form date and To date required
+                  </span>
+                ) : (
+                  ""
+                )}
+              </>
+            )}
+
+            <div class="search-buttons">
+              <button type="button" onClick={handleGenerated}>
+                Generate Report
+              </button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      <Modal style={{ width: "99vw" }} show={showModal7} onHide={handleClose7} >
         <Modal.Header closeButton>
           <Modal.Title>
             REPORT GENERATED BASED ON SELECTED DATE RANGE
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body style={{ width: "", height: "fit-content" }}>
           <div>
             <div className="search-bar">
               <div className="one_item">
@@ -1231,7 +1479,7 @@ export default function Home() {
                   id="name-right"
                   name="name-right"
                   placeholder="Enter case number"
-                  value={new Date(start_date).toLocaleDateString()}
+                  value={DateFormate(start_date)}
                   style={{ height: "27px" }}
                   disabled
                 />
@@ -1242,74 +1490,111 @@ export default function Home() {
                   id="name-right"
                   name="name-right"
                   placeholder="Enter case number"
-                  value={new Date(end_date).toLocaleDateString()}
+                  value={DateFormate(end_date)}
                   style={{ height: "27px" }}
                   disabled
                 />
               </div>
             </div>
-            <div class="tabless">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ background: "#ddd", fontSize: "12px" }}>
-                      Case Type
-                    </th>
-                    <th style={{ background: "#ddd", fontSize: "12px" }}>
-                      Number of Case Registered
-                    </th>
-                    <th style={{ background: "#ddd", fontSize: "12px" }}>
-                      Number of Case Disposed
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports_data.map((item) => (
+            <div style={{ display: "flex", gap: "20px", justifyContent: "space-around" }}>
+              <div class="tabless">
+                <table className="table">
+                  <thead>
                     <tr>
-                      <td>{item.caseNumber}</td>
-                      <td>
-                        {Number_Registered_Case(item.caseNumber, reports_data2)}
-                      </td>
-                      <td>
-                        {Number_Disposed_Case(item.caseNumber, reports_data2)}
-                      </td>
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        Case Type
+                      </th>
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        Number of Case Registered
+                      </th>
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        Number of Case Disposed
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div class="tabless">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ background: "#ddd", fontSize: "12px" }}>
-                      Case Type
-                    </th>
+                  </thead>
+                  <tbody>
+                    {reports_data.map((item) => (
+                      <tr>
+                        <td>{item.caseNumber}</td>
+                        <td>
+                          {Number_Registered_Case(item.caseNumber, reports_data2)}
+                        </td>
+                        <td>
+                          {Number_Disposed_Case(item.caseNumber, reports_data2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div class="tabless">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        Case Type
+                      </th>
 
-                    <th style={{ background: "#ddd", fontSize: "12px" }}>
-                      Average Disposal(Days)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports_data.map((item) => (
-                    <tr>
-                      <td>{item.caseNumber}</td>
-                      <td>{item.average}</td>
+                      <th style={{ background: "#ddd", fontSize: "12px" }}>
+                        Average Disposal(Days)
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {console.log(reports_data)}
+                    {reports_data.map((item) => (
+                      <tr>
+                        <td>{item.caseNumber}</td>
+                        <td>{item.average}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="search-buttons">
-              <button
-                onClick={handleDownload}
-                type="button"
-                class="btn btn-secondary"
-                data-dismiss="modal"
-              >
-                Download Report
-              </button>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "-20px" }}>
+              <h6>Download Reports</h6>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "20px",
+              }}
+            >
+              <div class="search-buttons">
+                <button
+                  onClick={handleDownload}
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  PDF Report
+                </button>
+              </div>
+
+              <div class="search-buttons">
+                <button
+                  onClick={handleDownload1}
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Excel Report
+                </button>
+              </div>
+
+              <div class="search-buttons">
+                <button
+                  onClick={handleDownload2}
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Verify Report
+                </button>
+              </div>
             </div>
           </div>
         </Modal.Body>
